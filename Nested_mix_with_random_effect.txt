@@ -1,3 +1,55 @@
+#### CASE: Historical changes in the abundance of the Caribbean sea urchin Diadema antillarum ####
+
+# D.antillarum is a keystone species that modulates the competitive interaction between sessile, slow-growing organisms
+# and fast-growing macroalgae on Caribbean reefs through grazing. 
+# In the 1980's a massive die-off of the sea urchin reduced its population throughout the region, disappearing in many reefs. 
+# This decline contributed to phase shifts where macralgae started dominating reefs that were previously dominated by reef-building corals.
+
+### Research Question ###
+# Do area-based conservation strategies, such as Marine Protected Areas (MPAs)
+# help in the mainteinance and/or recovery of D. antillarum populations?
+
+### The Sampling Design ###
+
+# A nested design is employ surveying at least three sites  in a coral reef MPA and the same amount 
+# on a similar coral reefs that is not protected. The number of sea urchins were ocunted along
+# a 100m^2 belt transect by one SCUBA diver, completing 8 transects on each site
+# 4 on the reef terrace (6m depth) and 4 on the reef slop (15m depth)
+
+
+### Experimental Design ###
+
+## Abundance of D antillarum: response variable. Continous  if density is used (number of urchins/m^2). Ordinal if counts are used.
+## Year (Y): Factor with 10 levels: 2000, 2001, 2002.....2010
+## Reef (R): Factor with 2 levels: MPA and non-MPA. Fixed if the reefs were not chosen randomly from a population of MPAs and non-MPAs.
+## Site (S): Factor, nested in Reef with 4 levels.
+## Reef Location (RL): Factor fixed with two levels: terrace and slope.
+## Transects: replicates. N= 10Y*2R*4S*2RL=160
+
+
+# Considering sites as nested on Reef. You have two possibilities, using Year as fixed or introducing random effects for both Year and Site. 
+# Let me explain the difference. You might want to answer the following questions/hypotheses
+
+
+# Does the abundance of D. antillarum differ between the MPA and no-MPA? | H: the abundance of D. antillarum is higher on the MPA
+# Does it vary from reef terrace to the slope?  | H: the abundance of D. antillarum is higher on reef terrace compared to the slope 
+# Does it vary with Year?  |  H: You in fact have no hypothesis associated with year. If you assume the population decreased considerably in the 1980s on # both reefs (MPA and non-MPA), then you would expect it to have increased in time on the MPA and not on the other reef.The latter would be an interaction.
+# Does variation among any of the levels of these, depend on any other? (Interactions)
+
+# However, there are additional sources of variability:
+# Site Variability: Even if you randomly select sites within each location every year, 
+# some sites might inherently have naturally higher abundances. 
+# This inherent variability among sites is not directly related to the impact an R, Y and/or RL
+
+# Sites as a random effect: If you are less concerned about the differences between specific sites 
+# and more concerned about the overall effect of R and RL, you can treat sites as a random effect to account for the random variability between sites.
+
+# The rationale behind introducing these random effects is to account for the variability 
+# introduced by these factors without making specific conclusions about them. 
+# This can help you get more accurate and generalizable results for the fixed factors you are truly interested in.
+
+# Let us build the model with sites as random effects
+
 # Required libraries
 library(lme4)
 library(lmerTest)
@@ -7,39 +59,39 @@ library(emmeans)
 set.seed(123)
 
 # Generating the dataset
-n_years <- 3
-n_locations <- 2
-n_sites_loc1 <- 3
-n_sites_loc2 <- 4
-n_transects <- 3
-n_depths <- 2
+n_years <- 10
+n_reef <- 2
+n_sites_reef1 <- 4
+n_sites_reef2 <- 4
+n_transects <- 4
+n_reeflocation <- 2
 
 # Simulated data
 data <- expand.grid(
   Year = 1:n_years,
-  Location = factor(1:n_locations, labels = c("Inside_MPA", "Outside_MPA")),
-  Site = 1:max(n_sites_loc1, n_sites_loc2),
+  Reef = factor(1:n_reef, labels = c("MPA", "non_MPA")),
+  Site = 1:max(n_sites_reef1, n_sites_reef2),
   Transect = 1:n_transects,
-  Depth = c(10, 15)
+  ReefLocation = c("terrace", "slope")
 )
 
 # Filter out the unnecessary combinations
-data <- data[!(data$Location == "Inside_MPA" & data$Site > n_sites_loc1), ]
-data <- data[!(data$Location == "Outside_MPA" & data$Site > n_sites_loc2), ]
+data <- data[!(data$Reef == "MPA" & data$Site > n_sites_reef1), ]
+data <- data[!(data$Reef == "non_MPA" & data$Site > n_sites_reef2), ]
 
-# Simulating abundance value (just a dummy dataset; you can modify as needed)
-data$abundance <- rnorm(nrow(data), mean = 5, sd = 2.3)
+# Simulating abundance value (just a dummy dataset assuming normal distribution)
+data$abundance <- rnorm(nrow(data), mean = 15, sd = 2.3)
 
 
 # Running the mixed model with random effect only for site
-model <- lmer(abundance ~ Location * Depth * Year + (1|Site:Location), data = data)
+model_1 <- lmer(abundance ~ Location * Depth * Year + (1|Site:Location), data = data)
 
 
 # Printing the model output
-summary(model)
+summary(model_1)
 
 
 # Pairwise comparisons for interaction of Location, Depth, and Year
-emm <- emmeans(model, ~ Location * Depth * Year)
+emm <- emmeans(model_1, ~ Location * Depth * Year)
 pairs(emm)
 
