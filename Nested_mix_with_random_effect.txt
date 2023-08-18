@@ -1,0 +1,45 @@
+# Required libraries
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+# Setting a seed for reproducibility
+set.seed(123)
+
+# Generating the dataset
+n_years <- 3
+n_locations <- 2
+n_sites_loc1 <- 3
+n_sites_loc2 <- 4
+n_transects <- 3
+n_depths <- 2
+
+# Simulated data
+data <- expand.grid(
+  Year = 1:n_years,
+  Location = factor(1:n_locations, labels = c("Inside_MPA", "Outside_MPA")),
+  Site = 1:max(n_sites_loc1, n_sites_loc2),
+  Transect = 1:n_transects,
+  Depth = c(10, 15)
+)
+
+# Filter out the unnecessary combinations
+data <- data[!(data$Location == "Inside_MPA" & data$Site > n_sites_loc1), ]
+data <- data[!(data$Location == "Outside_MPA" & data$Site > n_sites_loc2), ]
+
+# Simulating abundance value (just a dummy dataset; you can modify as needed)
+data$abundance <- rnorm(nrow(data), mean = 5, sd = 2.3)
+
+
+# Running the mixed model with random effect only for site
+model <- lmer(abundance ~ Location * Depth * Year + (1|Site:Location), data = data)
+
+
+# Printing the model output
+summary(model)
+
+
+# Pairwise comparisons for interaction of Location, Depth, and Year
+emm <- emmeans(model, ~ Location * Depth * Year)
+pairs(emm)
+
